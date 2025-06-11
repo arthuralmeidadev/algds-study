@@ -1,19 +1,14 @@
 package datastructures
 
 type Vertex struct {
-	Label              string
-	AllowsLoops        bool
-	AllowParallelEdges bool
-	MaxDegree          uint
-	X, Y               float32
-	edges              []*edge
+	Label                           string
+	AllowsLoops, AllowParallelEdges bool
+	MaxDegree                       uint
+	X, Y                            float32
+	edges                           []*edge
 }
 
-type VertexDegree struct {
-	total uint
-	in    uint
-	out   uint
-}
+type VertexDegree struct{ total, in, out uint }
 
 func (v *Vertex) Degree() *VertexDegree {
 	d := new(VertexDegree)
@@ -40,10 +35,9 @@ type edge struct {
 }
 
 type Graph struct {
-	vertices []*Vertex
-	edges    []edge
-	selected []*Vertex
-	active   *Vertex
+	vertices, selected []*Vertex
+	edges              []edge
+	active             *Vertex
 }
 
 func (g *Graph) SelectVertex(label string) bool {
