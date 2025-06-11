@@ -80,8 +80,10 @@ func (g *Graph) AddVertex(v *Vertex) {
 			}
 
 			newEdge := edge{
-				head: head,
-				tail: tail,
+				head:     head,
+				tail:     tail,
+				directed: false,
+				weight:   0,
 			}
 			v.edges = append(v.edges, &newEdge)
 			g.edges = append(g.edges, newEdge)
