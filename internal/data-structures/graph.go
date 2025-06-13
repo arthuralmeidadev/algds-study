@@ -15,34 +15,81 @@ type Vertex struct {
 	edges                           []*edge
 }
 
-func (v *Vertex) getNearestUnlinked(vertices []*Vertex) *Vertex {
-	var unlinkedVertices []*Vertex
+type VertexState struct {
+	value string
+}
 
-	for i := 0; i < len(vertices); i++ {
-		if !slices.Contains(v.GetLinked(), vertices[i]) && v != vertices[i] {
-			unlinkedVertices = append(unlinkedVertices, vertices[i])
-		}
+type edge struct {
+	head, tail *Vertex
+	directed   bool
+	weight     float32
+}
+
+type Graph struct {
+	vertices, selected []*Vertex
+	edges              []*edge
+	active             *Vertex
+}
+
+func (s *VertexState) Unlinked() *VertexState {
+	s.value = "unliked"
+	return s
+}
+
+func (s *VertexState) Linked() *VertexState {
+	s.value = "linked"
+	return s
+}
+
+func (s *VertexState) Any() *VertexState {
+	s.value = "any"
+	return s
+}
+
+func (s VertexState) Value() string {
+	if s.value == "" {
+		return "any"
 	}
 
-	if len(unlinkedVertices) == 0 {
+	return s.value
+}
+
+func (v *Vertex) GetNearest(
+	vertices []*Vertex,
+	vertexState *VertexState,
+) *Vertex {
+	if len(vertices) == 0 {
 		return nil
 	}
 
-	var nearestUnlinked struct {
+	slices.DeleteFunc(vertices, func(delV *Vertex) bool {
+		return delV == v
+	})
+
+	var nearest struct {
 		value    *Vertex
 		distance float32
 	}
 
-	for i := 0; i < len(unlinkedVertices); i++ {
-		d := unlinkedVertices[i].CalcDistance(v.X, v.Y)
+	for i := 0; i < len(vertices); i++ {
+		vertexStateName := vertexState.Value()
+		isLinked := slices.Contains(v.GetLinked(), vertices[i])
+		checkVertex :=
+			(vertexStateName == "linked" && isLinked) ||
+				(vertexStateName == "unliked" && !isLinked) ||
+				vertexStateName == "any"
 
-		if d <= nearestUnlinked.distance {
-			nearestUnlinked.value = unlinkedVertices[i]
-			nearestUnlinked.distance = d
+		if checkVertex {
+			d := vertices[i].CalcDistance(v.X, v.Y)
+
+			if d <= nearest.distance {
+				nearest.value = vertices[i]
+				nearest.distance = d
+			}
 		}
 	}
 
-	return nearestUnlinked.value
+	return nearest.value
 }
 
 func (v *Vertex) Degree() *VertexDegree {
@@ -138,23 +185,12 @@ func (v *Vertex) CalcDistance(dX, dY float32) float32 {
 	return float32(math.Sqrt(squaredWidth + squaredHeight))
 }
 
-type edge struct {
-	head, tail *Vertex
-	directed   bool
-	weight     float32
-}
-
-type Graph struct {
-	vertices, selected []*Vertex
-	edges              []*edge
-	active             *Vertex
-}
-
 func (g *Graph) SelectLabeled(label string) bool {
 	var v *Vertex
 	for i := 0; i < len(g.vertices); i++ {
 		if g.vertices[i].Label == label {
 			v = g.vertices[i]
+			break
 		}
 	}
 
@@ -179,11 +215,12 @@ func (g *Graph) AddVertex(v *Vertex) {
 	g.ClearSelection()
 	g.selected = append(g.selected, g.active)
 	g.active = v
-	g.Link()
+	g.Link(false, .0)
 }
 
-func (g *Graph) Link() {
-	next := g.active.getNearestUnlinked(g.selected)
+func (g *Graph) Link(directed bool, weight float32) {
+	vertexState := VertexState{}
+	next := g.active.GetNearest(g.selected, vertexState.Unlinked())
 	if next == nil {
 		return
 	}
@@ -191,19 +228,38 @@ func (g *Graph) Link() {
 	newEdge := &edge{
 		head:     next,
 		tail:     g.active,
-		directed: false,
-		weight:   0,
+		directed: directed,
+		weight:   weight,
 	}
 
 	g.active.edges = append(g.active.edges, newEdge)
 	next.edges = append(next.edges, newEdge)
 	g.edges = append(g.edges, newEdge)
 	g.active = next
-	g.Link()
+	g.Link(directed, weight)
 }
 
 func (g *Graph) Unlink() {
+	vertexState := VertexState{}
+	next := g.active.GetNearest(g.selected, vertexState.Linked())
 
+	if next == nil {
+		return
+	}
+
+	for i := 0; i < len(g.edges); i++ {
+		head, tail := g.edges[i].head, g.edges[i].tail
+		fromActiveToNext := head == g.active && tail == next
+		fromNextToActive := tail == g.active && head == next
+
+		if fromActiveToNext || fromNextToActive {
+			g.edges[i] = nil
+			slices.Delete(g.edges, i, i+1)
+		}
+	}
+
+	g.active = next
+	g.Unlink()
 }
 
 func (g *Graph) Diameter() {
