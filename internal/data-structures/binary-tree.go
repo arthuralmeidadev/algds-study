@@ -16,7 +16,7 @@ type BinaryTree[T any] struct {
 
 func (n *BinaryTreeNode[T]) NewChildLeft(v T) (*BinaryTreeNode[T], error) {
 	if n.left != nil {
-		return nil, fmt.Errorf("This noe already has a left child node")
+		return nil, fmt.Errorf("This node already has a left child node")
 	}
 
 	n.left = &BinaryTreeNode[T]{
@@ -30,7 +30,7 @@ func (n *BinaryTreeNode[T]) NewChildLeft(v T) (*BinaryTreeNode[T], error) {
 
 func (n *BinaryTreeNode[T]) NewChildRight(v T) (*BinaryTreeNode[T], error) {
 	if n.left != nil {
-		return nil, fmt.Errorf("This noe already has a right child node")
+		return nil, fmt.Errorf("This node already has a right child node")
 	}
 
 	n.right = &BinaryTreeNode[T]{
