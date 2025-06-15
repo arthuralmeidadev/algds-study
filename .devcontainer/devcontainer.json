@@ -1,0 +1,7 @@
+{
+  "image": "mcr.microsoft.com/devcontainers/universal:2",
+  "features": {
+    "nvim": "ghcr.io/larsnieuwenhuizen/features/neovim:0",
+    "go": "ghcr.io/bartventer/arch-devcontainer-features/go:1"
+  }
+}
